@@ -1,7 +1,9 @@
 import random
 import numpy as np
+from collections import namedtuple, deque
 
-class Agent():
+
+class Agent:
     """Interacts with and learns from the environment."""
 
     def __init__(self, config):
@@ -104,7 +106,8 @@ class Agent():
             target_model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter
         """
-        # TODO Store next target_params in np array to set all at once
+        # TODO DQN.soft_update: Store next target_params in np array to set all
+        #  at once
         print('Weight shape:', local_model.get_weights().shape)
         for target_param, local_param in zip(target_model.get_weights(),
                                              local_model.get_weights()):
@@ -142,22 +145,15 @@ class ReplayBuffer:
            Return indexes of sampled experiences in order to update their
            priorities after learning from them.
         """
-        # TODO Set to all np arrays
         experiences = random.sample(self.memory, k=self.batch_size)
 
-        states = torch.from_numpy(np.vstack(
-            [e.state for e in experiences if e is not None])).float().to(device)
-        actions = torch.from_numpy(np.vstack(
-            [e.action for e in experiences if e is not None])).long().to(device)
-        rewards = torch.from_numpy(np.vstack(
-            [e.reward for e in experiences if e is not None])).float().to(
-            device)
-        next_states = torch.from_numpy(np.vstack(
-            [e.next_state for e in experiences if e is not None])).float().to(
-            device)
-        dones = torch.from_numpy(
-            np.vstack([e.done for e in experiences if e is not None]).astype(
-                np.uint8)).float().to(device)
+        states = np.vstack([e.state for e in experiences if e is not None])
+        actions = np.vstack([e.action for e in experiences if e is not None])
+        rewards = np.vstack([e.reward for e in experiences if e is not None])
+        next_states = np.vstack(
+            [e.next_state for e in experiences if e is not None])
+        dones = np.vstack(
+            [e.done for e in experiences if e is not None]).astype(np.uint8)
 
         return states, actions, rewards, next_states, dones
 
