@@ -48,10 +48,10 @@ class Preprocessor:
                                              np.arange(max_no['available_actions'])]
                 nonspatial_stack = np.concatenate((nonspatial_stack, available_actions_v))
         print('Processed Input:\n')
-        print('\tReward: ', reward)
-        print('\tSpatial Stack: ', spatial_stack.shape)
-        print('\tMinimap Stack: ', minimap_stack.shape)
-        print('\tNon-Spatial Stack: ', nonspatial_stack.shape)
+        print('\tReward: ', type(reward))
+        print('\tSpatial Stack: ', spatial_stack.dtype, spatial_stack.shape)
+        print('\tMinimap Stack: ', minimap_stack.dtype, minimap_stack.shape)
+        print('\tNon-Spatial Stack: ', nonspatial_stack.dtype, nonspatial_stack.shape)
         return reward, spatial_stack, minimap_stack, nonspatial_stack
 
 
