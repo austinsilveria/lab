@@ -1,4 +1,5 @@
 import numpy as np
+import keras
 from pysc2.env import sc2_env
 from pysc2.lib import actions, features, units
 from absl import app
@@ -46,12 +47,14 @@ class Preprocessor:
             elif k in available_actions:
                 available_actions_v = [1 if action_id in v else 0 for action_id in
                                              np.arange(max_no['available_actions'])]
-                nonspatial_stack = np.concatenate((nonspatial_stack, available_actions_v))
+                nonspatial_stack = np.concatenate(
+                    (nonspatial_stack, available_actions_v))
+        # TODO Use keras.backend.resize_images to resize minimap to (84, 84)
         print('Processed Input:\n')
         print('\tReward: ', type(reward))
         print('\tSpatial Stack: ', spatial_stack.dtype, spatial_stack.shape)
         print('\tMinimap Stack: ', minimap_stack.dtype, minimap_stack.shape)
-        print('\tNon-Spatial Stack: ', nonspatial_stack.dtype, nonspatial_stack.shape)
+        print('\tNon-Spatial Stack: ', nonspatial_stack)
         return reward, spatial_stack, minimap_stack, nonspatial_stack
 
 
