@@ -35,7 +35,7 @@ class Preprocessor:
         available_actions = ['available_actions']
         print('Action Spec: ', len(self.action_spec[0].functions))
         max_no = {'available_actions': len(self.action_spec[0].functions),
-                  'cargo': 200, 'multi_select': 200, 'build_queue': 10}
+                  'cargo': 150, 'multi_select': 200, 'build_queue': 10}
         nonspatial_stack = []
         for k, v in self.obs.observation.items():
             if k not in spatial_features + variable_features + available_actions:
@@ -60,13 +60,13 @@ class Preprocessor:
                 print('Length after action cat:', len(nonspatial_stack))
         state_shape = [shape for shape in spatial_stack.shape[:3]]
         print('State shape:', state_shape)
+        #print('Nonspatial length before reshape:', len(nonspatial_stack))
         nonspatial_stack = np.reshape(np.concatenate((nonspatial_stack,
                                                      np.zeros(state_shape[1] *
                                                               state_shape[2] -
                                                               len(nonspatial_stack))))
                                       , tuple(state_shape + [1]))
         print('Non-spatial after reshape:', nonspatial_stack.shape)
-        # TODO Use keras.backend.resize_images to resize minimap to (84, 84)
         print('Processed Input:\n')
         print('\tReward: ', type(reward))
         print('\tSpatial Stack: ', spatial_stack.dtype, spatial_stack.shape)
@@ -86,7 +86,8 @@ def main(unused_argv):
                              sc2_env.Bot(sc2_env.Race.random,
                                          sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
-                        feature_dimensions=features.Dimensions(screen=84, minimap=84),
+                        feature_dimensions=features.Dimensions(screen=64,
+                                                               minimap=64),
                         use_feature_units=True),
                     step_mul=16,
                     game_steps_per_episode=0,
