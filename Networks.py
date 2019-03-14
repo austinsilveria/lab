@@ -1,4 +1,4 @@
-from keras import Input, layers
+from keras import Input, layers, backend
 from keras.models import Model
 
 
@@ -13,12 +13,16 @@ class Networks:
 
     def SC2FullConv(self):
         reward_input = Input(shape=(1,), dtype='int32', name='reward')
-        non_spatial_input = Input(shape=(8492,),
+        non_spatial_input = Input(shape=(1, 64, 64, 3),
                                   dtype='float64', name='non_spatial')
-        screen_input = Input(shape=(17, 84, 84, 1),
+        screen_input = Input(shape=(1, 64, 64, 17),
                               dtype='int32', name='screen')
-        minimap_input = Input(shape=(7, 64, 64, 1),
+        minimap_input = Input(shape=(1, 64, 64, 7),
                               dtype='int32', name='minimap')
         screen_out = self.FullConvBase(screen_input)
         minimap_out = self.FullConvBase(minimap_input)
+        # State representation shape: (1, 64, 64, 27)
+        state_rep = backend.concatenate((screen_out,
+                                        minimap_out,
+                                        non_spatial_input))
 
