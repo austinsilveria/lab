@@ -34,22 +34,25 @@ class Preprocessor:
         variable_features = ['cargo', 'multi_select', 'build_queue']
         available_actions = ['available_actions']
         print('Action Spec: ', len(self.action_spec[0].functions))
+        print('Single select:', self.obs_spec[0]['single_select'][1])
         max_no = {'available_actions': len(self.action_spec[0].functions),
-                  'cargo': 150, 'multi_select': 200, 'build_queue': 10}
+                  'cargo': 500, 'multi_select': 500, 'build_queue': 10}
         nonspatial_stack = []
         for k, v in self.obs.observation.items():
             if k not in spatial_features + variable_features + available_actions:
-                v[abs(v) == 0] = 1
+                #v[abs(v) == 0] = 1
                 #print('Log Static Features: ', np.log(v.reshape(-1)))
-                nonspatial_stack = np.concatenate((nonspatial_stack, np.log(v.reshape(-1))))
+                nonspatial_stack = np.concatenate((nonspatial_stack, np.log1p(v.reshape(-1))))
+                print('Non-spatial:', k, ':', v.reshape(-1).shape)
             elif k in variable_features:
-                v[abs(v) == 0] = 1
+                #v[abs(v) == 0] = 1
                 #print('Variable value: ', v.reshape(-1))
                 #print('Padding: ', np.zeros(max_no[k] * self.obs_spec[0][
                 # 'single_select'][1] - len(v.reshape(-1))))
-                padded_v = np.concatenate((np.log(v.reshape(-1)), np.zeros(
+                padded_v = np.concatenate((np.log1p(v.reshape(-1)), np.zeros(
                     max_no[k] * self.obs_spec[0]['single_select'][1] - len(v.reshape(-1)))))
                 nonspatial_stack = np.concatenate((nonspatial_stack, padded_v))
+                print('Variable feature:', k, ':', padded_v.shape)
             elif k in available_actions:
                 available_actions_v = [1 if action_id in v else 0 for action_id in
                                              np.arange(max_no['available_actions'])]
@@ -62,10 +65,10 @@ class Preprocessor:
         print('State shape:', state_shape)
         #print('Nonspatial length before reshape:', len(nonspatial_stack))
         nonspatial_stack = np.reshape(np.concatenate((nonspatial_stack,
-                                                     np.zeros(state_shape[1] *
+                                                     np.zeros(3*state_shape[1] *
                                                               state_shape[2] -
                                                               len(nonspatial_stack))))
-                                      , tuple(state_shape + [1]))
+                                      , tuple(state_shape + [3]))
         print('Non-spatial after reshape:', nonspatial_stack.shape)
         print('Processed Input:\n')
         print('\tReward: ', type(reward))
