@@ -14,20 +14,31 @@ class Networks:
         return conv2
 
     def SC2FullConv(self):
-        reward_input = Input(shape=(1,), dtype='int32', name='reward')
-        non_spatial_input = Input(shape=(1, 64, 64, 3),
-                                  dtype='float64', name='non_spatial')
-        screen_input = Input(shape=(1, 64, 64, 17),
-                             dtype='int32', name='screen')
-        minimap_input = Input(shape=(1, 64, 64, 7),
-                              dtype='int32', name='minimap')
+        non_spatial_input = Input(shape=(64, 64, 3),
+                                  dtype='float32', name='non_spatial')
+        screen_input = Input(shape=(64, 64, 17),
+                             dtype='float32', name='screen')
+        minimap_input = Input(shape=(64, 64, 7),
+                              dtype='float32', name='minimap')
         screen_mid = self.FullConvBase(screen_input)
         minimap_mid = self.FullConvBase(minimap_input)
         # State representation shape: (1, 64, 64, 27)
+        print('screen_mid:', screen_mid.shape)
+        print('minimap_mid:', minimap_mid.shape)
+        print('non_spatial_input:', non_spatial_input.shape)
         state_rep = backend.concatenate((screen_mid,
                                         minimap_mid,
                                         non_spatial_input))
-        screen_out = layers.Conv1D(1, 1, padding='same', name='screen')(state_rep)
-        screen2_out = layers.Conv1D(1, 1, padding='same', name='screen2')(state_rep)
-        minimap_out = layers.Conv1D(1, 1, padding='same', name='minimap')(state_rep)
+        print('State rep:', state_rep.shape)
+        screen_out = layers.Conv2D(1, 1, padding='same',
+                                   activation='softmax',
+                                   name='screen_out')(state_rep)
+        screen2_out = layers.Conv2D(1, 1, padding='same',
+                                    activation='softmax',
+                                    name='screen2_out')(state_rep)
+        minimap_out = layers.Conv2D(1, 1, padding='same',
+                                    activation='softmax',
+                                    name='minimap_out')(state_rep)
+        return Model(inputs=[non_spatial_input, screen_input, minimap_input],
+                     outputs=[screen_out, screen2_out, minimap_out])
 

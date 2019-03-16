@@ -1,1 +1,5 @@
 /home/austin/lab/.idea
+
+\.idea/
+
+*.pyc
