@@ -4,6 +4,8 @@ from pysc2.lib import actions, features, units
 from absl import app
 import random
 
+SIZE = 64
+
 
 class ZergAgent(base_agent.BaseAgent):
     def __init__(self):
@@ -57,9 +59,9 @@ class ZergAgent(base_agent.BaseAgent):
         if len(spawning_pools) == 0:
             if self.unit_type_is_selected(obs, units.Zerg.Drone):
                 if self.can_do(obs, actions.FUNCTIONS.Build_SpawningPool_screen.id):
-                    x = random.randint(0, 83)
-                    y = random.randint(0, 83)
-
+                    x = random.randint(0, SIZE - 1)
+                    y = random.randint(0, SIZE - 1)
+                    print('Spawning pool:', actions.FUNCTIONS.Build_SpawningPool_screen("now", (x, y)))
                     return actions.FUNCTIONS.Build_SpawningPool_screen("now", (x, y))
 
             drones = self.get_units_by_type(obs, units.Zerg.Drone)
@@ -99,7 +101,8 @@ def main(unused_argv):
                              sc2_env.Bot(sc2_env.Race.random,
                                          sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
-                        feature_dimensions=features.Dimensions(screen=84, minimap=64),
+                        feature_dimensions=features.Dimensions(screen=SIZE,
+                                                               minimap=SIZE),
                         use_feature_units=True),
                     step_mul=16,
                     game_steps_per_episode=0,
