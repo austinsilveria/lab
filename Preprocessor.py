@@ -22,11 +22,13 @@ class Preprocessor:
         spatial_stack = np.expand_dims(np.copy(screen).
                                        reshape((screen.shape[1],
                                                 screen.shape[2],
-                                                screen.shape[0])), axis=0)
+                                                screen.shape[0])), axis=0).\
+            astype(np.float32)
         minimap_stack = np.expand_dims(np.copy(minimap).
                                        reshape((minimap.shape[1],
                                                 minimap.shape[2],
-                                                minimap.shape[0])), axis=0)
+                                                minimap.shape[0])), axis=0).\
+            astype(np.float32)
         print('New screen shape', spatial_stack.shape)
         print('New Minimap shape: ', minimap_stack.shape)
         #print('All attr: ', self.obs.observation.__dict__.keys())
@@ -68,7 +70,7 @@ class Preprocessor:
                                                      np.zeros(3*state_shape[1] *
                                                               state_shape[2] -
                                                               len(nonspatial_stack))))
-                                      , tuple(state_shape + [3]))
+                                      , tuple(state_shape + [3])).astype(np.float32)
         print('Non-spatial after reshape:', nonspatial_stack.shape)
         print('Processed Input:\n')
         print('\tReward: ', type(reward))
