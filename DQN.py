@@ -29,12 +29,12 @@ class Agent:
         self.tau = config.tau
 
         # Q-Network
-        self.qnetwork_local = config.model
-        self.qnetwork_target = config.model
+        self.qnetwork_local = config.build_model()
+        self.qnetwork_target = config.build_model()
 
         # Replay memory
         self.buffer_size = config.buffer_size
-        self.memory = ReplayBuffer(config.action_size, self.buffer_size,
+        self.memory = ReplayBuffer(self.action_size, self.buffer_size,
                                    self.batch_size, self.seed)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
@@ -102,17 +102,15 @@ class Agent:
         θ_target = τ*θ_local + (1 - τ)*θ_target
         Params
         ======
-            local_model (PyTorch model): weights will be copied from
-            target_model (PyTorch model): weights will be copied to
+            local_model (Keras model): weights will be copied from
+            target_model (Keras model): weights will be copied to
             tau (float): interpolation parameter
         """
-        # TODO DQN.soft_update: Store next target_params in np array to set all
-        #  at once
         print('Weight shape:', local_model.get_weights().shape)
-        for target_param, local_param in zip(target_model.get_weights(),
-                                             local_model.get_weights()):
-            target_param.data.copy_(
-                tau * local_param.data + (1.0 - tau) * target_param.data)
+        local_weights = local_model.get_weights()
+        target_weights = target_model.get_weights()
+        new_weights = tau * local_weights + (1.0 - tau) * target_weights
+        target_model.set_weights(new_weights)
 
 
 class ReplayBuffer:
@@ -160,3 +158,4 @@ class ReplayBuffer:
     def __len__(self):
         """Return the current size of internal memory."""
         return len(self.memory)
+
