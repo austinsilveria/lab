@@ -5,6 +5,8 @@ from pysc2.lib import actions
 
 
 class SC2NetWrapper:
+    # TODO: Use better network output representation to allow for np parallel
+    #       indexing
     def __init__(self, keras_model):
         self.model = keras_model
         self.model_out = {'action_id': 0,
@@ -86,8 +88,8 @@ class SC2NetWrapper:
         #        for action_id, arg_set in zip(action_ids, args)]
         action_set = []
         for action_id, arg_set in zip(action_ids, args):
-            # arg_set comes in form: [arg_id, batch_size, argument]
-            # we only want the argument, so arg_set[2]
+            # arg comes in form: [arg_id, batch_id, argument]
+            # we only want the argument, so arg[2]
             passed_args = []
             if action_id != 0:
                 for arg in arg_set:
@@ -98,6 +100,20 @@ class SC2NetWrapper:
                         passed_args.append(arg[2])
             action_set.append(actions.FunctionCall(action_id, passed_args))
         return action_set
+
+    def predict_action_value(self, state, action_ids, args):
+        network_out = self.model.predict(state)
+        value_sum = np.zeros((len(action_ids), 1))
+        #for action_id, arg_set in zip(action_ids, args):
+        for batch, tup in enumerate(zip(action_ids, args)):
+            action_id = tup[0]
+            arg_set = tup[1]
+            value_sum[batch] += network_out[0][batch][action_id]
+            for arg in arg_set:
+                arg_id = arg[0]
+                argument = arg[2]
+                value_sum[batch] += network_out[arg_id][batch][argument]
+        return value_sum
 
     def predict_value(self, state):
         """Returns network output value of all actions and args
@@ -114,9 +130,9 @@ def test_wrapper():
     #non_spatial = np.random.rand(32, 64, 64, 3)
     #screen = np.random.rand(32, 64, 64, 17)
     #minimap = np.random.rand(32, 64, 64, 7)
-    non_spatial = np.random.rand(1, 64, 64, 3)
-    screen = np.random.rand(1, 64, 64, 17)
-    minimap = np.random.rand(1, 64, 64, 7)
+    non_spatial = np.random.rand(32, 64, 64, 3)
+    screen = np.random.rand(32, 64, 64, 17)
+    minimap = np.random.rand(32, 64, 64, 7)
     avail = np.array([0, 1, 2, 3, 4])[np.newaxis, :]
     all_avail = np.repeat(avail, non_spatial.shape[0], axis=0)
     print('Available actions:', all_avail[0])
@@ -127,9 +143,13 @@ def test_wrapper():
     action_ids, args = wrapped.predict_actions([non_spatial, screen, minimap],
                                                 all_avail)
     action_funcs = wrapped.build_actions(action_ids, args)
+    action_values = wrapped.predict_action_value([non_spatial, screen, minimap],
+                                                 action_ids,
+                                                 args)
     #print('Q-Values:', q_values)
     #print('Action ids:', action_ids)
     print('Action functions:', action_funcs)
+    print('Action values:', action_values.shape)
 
 
 if __name__ == '__main__':
