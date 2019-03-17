@@ -33,6 +33,11 @@ class ZergAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(ZergAgent, self).step(obs)
+        #print(actions.FUNCTIONS.no_op())
+        print(actions.FUNCTIONS[1].args[0].id)
+        print(type(actions.TYPES[actions.FUNCTIONS[1].args[0].id]))
+        print('Available actions:', obs.observation.available_actions)
+        return actions.FunctionCall(0, [])
 
         if obs.first():
             player_y, player_x = (obs.observation.feature_minimap.player_relative ==
@@ -87,7 +92,6 @@ class ZergAgent(base_agent.BaseAgent):
 
             return actions.FUNCTIONS.select_point("select_all_type", (larva.x,
                                                                       larva.y))
-
         return actions.FUNCTIONS.no_op()
 
 
