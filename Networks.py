@@ -48,12 +48,12 @@ class Networks:
         screen_out = layers.Conv2D(1, 1, padding='same',
                                    activation='softmax',
                                    name='screen_out')(state_rep)
-        screen2_out = layers.Conv2D(1, 1, padding='same',
-                                    activation='softmax',
-                                    name='screen2_out')(state_rep)
         minimap_out = layers.Conv2D(1, 1, padding='same',
                                     activation='softmax',
                                     name='minimap_out')(state_rep)
+        screen2_out = layers.Conv2D(1, 1, padding='same',
+                                    activation='softmax',
+                                    name='screen2_out')(state_rep)
 
         # Non-spatial out
         action_id_out = layers.Dense(549, activation='softmax',
@@ -80,8 +80,8 @@ class Networks:
                                      name='unload_id_out')(non_spatial_state)
 
         return Model(inputs=[non_spatial_input, screen_input, minimap_input],
-                     outputs=[action_id_out, screen_out, screen2_out,
-                              minimap_out, queued_out, control_group_act_out,
+                     outputs=[action_id_out, screen_out, minimap_out,
+                              screen2_out, queued_out, control_group_act_out,
                               control_group_id_out, select_point_act_out,
                               select_add_out, select_unit_act_out,
                               select_unit_id_out, select_worker_out,
