@@ -2,6 +2,7 @@ import Networks as nt
 import numpy as np
 import ActionFuncs as af
 from pysc2.lib import actions
+import random
 
 
 class SC2NetWrapper:
@@ -46,12 +47,18 @@ class SC2NetWrapper:
         #print('Network out:', [i.shape for i in network_out])
         #print('Network out length', len(network_out))
         action_values = network_out[self.model_out['action_id']]
-        #print('Action values:', action_values)
+        print('Action values:', action_values)
         masked_action_values = np.zeros_like(action_values)
-        #print('Masked action values:', masked_action_values.shape)
-        masked_action_values[:, available_actions] = action_values[:, available_actions]
-        #print('Masked action values data:', masked_action_values)
+        print('Available actions:', available_actions)
+        #masked_action_values[:, available_actions] = action_values[:, available_actions]
+        masked_action_values = np.where(available_actions > 0, action_values, 0)
+        print('Masked action values:', masked_action_values)
+        all_action_ids = np.repeat(np.arange(available_actions.shape[1])[np.newaxis, :],
+                                   available_actions.shape[0], axis=0)
         action_ids = list(np.argmax(masked_action_values, axis=1))
+        print('Best action ids:', action_ids)
+        #print('Masked action values data:', masked_action_values)
+        #action_ids = np.where(masked_action_values > 0, all_action_ids, 550)
         #print('Action ids:', action_ids)
         arg_ids = af.get_arg_ids(action_ids)
         #print('Arg ids:', arg_ids)
@@ -71,7 +78,7 @@ class SC2NetWrapper:
                 if len(best_arg) == 1:
                     best_arg = best_arg[0]
                 i_args.append([arg, i, best_arg])
-            #print('Batch:', i, ' args for action', action_ids[i], ':', i_args)
+            print('Batch:', i, ' args for action', action_ids[i], ':', i_args)
             args.append(i_args)
         #print('All batch args:', args)
         #args = [np.unravel_index(np.argmax(network_out[self.model_out[name]]),
@@ -121,6 +128,10 @@ class SC2NetWrapper:
         network_out = self.model.predict(state)
         return network_out
 
+    def random_action(self, batch_size, available_actions):
+        choice = random.choice(available_actions)
+        arg_ids = af.get_arg_ids([choice])
+
 
 def test_wrapper():
     model = nt.Networks().SC2FullConv()
@@ -130,12 +141,21 @@ def test_wrapper():
     #non_spatial = np.random.rand(32, 64, 64, 3)
     #screen = np.random.rand(32, 64, 64, 17)
     #minimap = np.random.rand(32, 64, 64, 7)
-    non_spatial = np.random.rand(32, 64, 64, 3)
-    screen = np.random.rand(32, 64, 64, 17)
-    minimap = np.random.rand(32, 64, 64, 7)
-    avail = np.array([0, 1, 2, 3, 4])[np.newaxis, :]
-    all_avail = np.repeat(avail, non_spatial.shape[0], axis=0)
-    print('Available actions:', all_avail[0])
+    action_size = 549
+    non_spatial = np.random.rand(2, 64, 64, 3)
+    screen = np.random.rand(2, 64, 64, 17)
+    minimap = np.random.rand(2, 64, 64, 7)
+    #avail1 = np.concatenate((avail1, np.repeat(-1, action_size - len(avail1))))
+    avail1 = np.zeros(action_size)
+    avail_actions_1 = np.array([0, 1, 2, 3, 4])
+    avail1[avail_actions_1] = 1
+    avail2 = np.zeros(action_size)
+    avail_actions_2 = np.array([6, 7, 8, 1])
+    avail2[avail_actions_2] = 1
+    #avail2 = np.concatenate((avail2, np.repeat(-1, action_size - len(avail2))))
+    #all_avail = np.repeat(avail, non_spatial.shape[0], axis=0)
+    all_avail = np.vstack((avail1[np.newaxis, :], avail2[np.newaxis, :]))
+    print('Available actions:', all_avail.shape)
     print('Sample non-spatial data:', non_spatial.shape)
     print('Sample screen data:', screen.shape)
     print('Sample minimap data:', minimap.shape)
