@@ -2,6 +2,7 @@ import Networks as nt
 import numpy as np
 import ActionFuncs as af
 from pysc2.lib import actions
+from Config import Config
 import random
 
 
@@ -50,13 +51,10 @@ class SC2NetWrapper:
         #print('Network out length', len(network_out))
         action_values = network_out[self.model_out['action_id']]
         #print('Action values:', action_values)
-        masked_action_values = np.zeros_like(action_values)
         #print('Available actions:', available_actions)
         #masked_action_values[:, available_actions] = action_values[:, available_actions]
         masked_action_values = np.where(available_actions > 0, action_values, 0)
         #print('Masked action values:', masked_action_values)
-        all_action_ids = np.repeat(np.arange(available_actions.shape[1])[np.newaxis, :],
-                                   available_actions.shape[0], axis=0)
         action_ids = list(np.argmax(masked_action_values, axis=1))
         #print('Best action ids:', action_ids)
         #print('Masked action values data:', masked_action_values)
@@ -91,7 +89,7 @@ class SC2NetWrapper:
         return action_ids, args
 
     def build_actions(self, action_ids, args):
-        #print('Length action_ids:', len(action_ids))
+        #print('Length action_ids:', len(actaf.get_arg_ids(action_ids)ion_ids))
         #print('Length args:', len(args))
         #return [actions.FunctionCall(action_id, arg_set[2:])
         #        for action_id, arg_set in zip(action_ids, args)]
@@ -106,7 +104,7 @@ class SC2NetWrapper:
                         length = len(arg[2])
                         passed_args.append(arg[2][:2])
                     except TypeError:
-                        passed_args.append(arg[2])
+                        passed_args.append((arg[2],))
             action_set.append(actions.FunctionCall(action_id, passed_args))
         return action_set
 
@@ -125,6 +123,51 @@ class SC2NetWrapper:
                 value_sum[batch] += network_out[arg_id][batch][argument]
         return value_sum
 
+    #def predict_actionfn_value(self, state, action_fns):
+    #    network_out = self.model.predict(state)
+    #    self.last_output = network_out
+    #    value_sum = np.zeros((len(action_fns), 1))
+    #    for batch, action in enumerate(action_fns):
+    #        action_id = action[0]
+    #        print('Action id:', action_id)
+    #        args = action[1]
+    #        print('Action args:', args)
+    #        arg_ids = (af.get_arg_ids([action_id]))[0]
+    #        print('Args from get_arg_ids:', arg_ids)
+    #        arg_ids = arg_ids[arg_ids != 0]
+    #        print('Removing unneeded args:', arg_ids)
+    #        for arg_id, arg in zip(arg_ids, args):
+    #            indexing_arg = arg
+    #            if type(indexing_arg) == tuple:
+    #                indexing_arg = tuple(list(indexing_arg) + [0])
+    #                print('Found point, adding channel dim:', indexing_arg)
+    #            value_sum[batch] += network_out[arg_id][batch][indexing_arg]
+    #    return value_sum
+
+    def generate_target(self, state, action_fns, q_targets):
+        network_out = self.model.predict(state)
+        self.last_output = network_out
+        for batch, tup in enumerate(zip(action_fns, q_targets)):
+            action = tup[0]
+            q_target = tup[1]
+            action_id = action[0]
+            #print('Action id:', action_id)
+            args = action[1]
+            #print('Action args:', args)
+            arg_ids = (af.get_arg_ids([action_id]))[0]
+            #print('Args from get_arg_ids:', arg_ids)
+            arg_ids = arg_ids[arg_ids != 0]
+            #print('Removing unneeded args:', arg_ids)
+            for arg_id, arg in zip(arg_ids, args):
+                indexing_arg = arg
+                if len(indexing_arg) > 1:
+                    indexing_arg = tuple(list(indexing_arg) + [0])
+                    #print('Found point, adding channel dim:', indexing_arg)
+                #print('Indexing:', network_out[arg_id][batch].shape, 'with arg:', indexing_arg)
+                network_out[arg_id][batch][indexing_arg] = q_target
+            network_out[0][batch][action_id] = q_target
+        return network_out
+
     def predict_value(self, state):
         """Returns network output value of all actions and args
         """
@@ -136,7 +179,9 @@ class SC2NetWrapper:
         if self.last_output is None:
             return actions.FunctionCall(0, [])
         #print('Available actions:', available_actions)
-        choice = random.choice(available_actions)
+        avail = (np.nonzero(available_actions))[0]
+        #print('Available action ids:', avail)
+        choice = random.choice(avail)
         #print('Choice:', choice)
         arg_ids = af.get_arg_ids([choice])[0]
         arg_ids = arg_ids[arg_ids != 0]
@@ -153,8 +198,6 @@ class SC2NetWrapper:
             #print('New last output shape:', last_output.shape)
             rand_output = np.random.rand(*last_output.shape)
             best = np.unravel_index(np.argmax(rand_output), rand_output.shape)
-            if len(best) == 1:
-                best = best[0]
             #print('For argument:', arg_id, 'best output:', best)
             args.append(best)
         #print('All args:', args)
@@ -163,13 +206,12 @@ class SC2NetWrapper:
         return action
 
 
-
-
 def test_wrapper():
-    model = nt.Networks().SC2FullConv()
-    model.compile(optimizer='adam',
-                  loss='categorical_crossentropy')
-    wrapped = SC2NetWrapper(model)
+    model = nt.Networks().SC2FullConv
+    print('Uncalled model:', model)
+    wrapper = SC2NetWrapper
+    print('Uninstantiated wrapper:', wrapper)
+    wrapped = wrapper(model())
     #non_spatial = np.random.rand(32, 64, 64, 3)
     #screen = np.random.rand(32, 64, 64, 17)
     #minimap = np.random.rand(32, 64, 64, 7)
@@ -177,6 +219,7 @@ def test_wrapper():
     non_spatial = np.random.rand(2, 64, 64, 3)
     screen = np.random.rand(2, 64, 64, 17)
     minimap = np.random.rand(2, 64, 64, 7)
+    state = [non_spatial, screen, minimap]
     #avail1 = np.concatenate((avail1, np.repeat(-1, action_size - len(avail1))))
     avail1 = np.zeros(action_size)
     avail_actions_1 = np.array([0, 1, 2, 3, 4])
@@ -191,21 +234,26 @@ def test_wrapper():
     #print('Sample non-spatial data:', non_spatial.shape)
     #print('Sample screen data:', screen.shape)
     #print('Sample minimap data:', minimap.shape)
-    q_values = wrapped.predict_value([non_spatial, screen, minimap])
-    action_ids, args = wrapped.predict_actions([non_spatial, screen, minimap],
+    q_values = wrapped.predict_value(state)
+    action_ids, args = wrapped.predict_actions(state,
                                                 all_avail)
     action_funcs = wrapped.build_actions(action_ids, args)
-    action_values = wrapped.predict_action_value([non_spatial, screen, minimap],
+    action_values = wrapped.predict_action_value(state,
                                                  action_ids,
                                                  args)
     #print('Q-Values:', q_values)
     #print('Action ids:', action_ids)
+    #print('Args:', args)
     #print('Action functions:', action_funcs)
     #print('Action values:', action_values.shape)
 
-    avail_random = np.array([0, 5, 20, 14])
-    rand_action = wrapped.random_action(avail_random)
-    print('Random action given avail:', avail_random, ':', rand_action)
+    rand_action = wrapped.random_action(avail2)
+    print('Random action given avail:', avail2, ':', rand_action)
+
+    funcs = np.vstack([func for func in action_funcs])
+    #print('Funcs for pred value:', funcs)
+    target = wrapped.generate_target(state, funcs, action_values)
+    #print('Target values:', [i.shape for i in target])
 
 if __name__ == '__main__':
     test_wrapper()
