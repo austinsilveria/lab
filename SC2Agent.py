@@ -37,7 +37,8 @@ class ZergAgent(base_agent.BaseAgent):
         print(actions.FUNCTIONS[1].args[0].id)
         print(type(actions.TYPES[actions.FUNCTIONS[1].args[0].id]))
         print('Available actions:', obs.observation.available_actions)
-        return actions.FunctionCall(0, [])
+        return actions.FunctionCall(function=3, arguments=[(0,), (11, 19), (63, 18)])
+
 
         if obs.first():
             player_y, player_x = (obs.observation.feature_minimap.player_relative ==

@@ -48,42 +48,46 @@ class Networks:
         screen_out = layers.Conv2D(1, 1, padding='same',
                                    activation='softmax',
                                    name='screen_out')(state_rep)
-        screen2_out = layers.Conv2D(1, 1, padding='same',
-                                    activation='softmax',
-                                    name='screen2_out')(state_rep)
         minimap_out = layers.Conv2D(1, 1, padding='same',
                                     activation='softmax',
                                     name='minimap_out')(state_rep)
+        screen2_out = layers.Conv2D(1, 1, padding='same',
+                                    activation='softmax',
+                                    name='screen2_out')(state_rep)
 
         # Non-spatial out
-        action_id_out = layers.Dense(549, activation='softmax',
+        action_id_out = layers.Dense(549, activation='linear',
                                      name='action_id_out')(non_spatial_state)
-        queued_out = layers.Dense(2, activation='softmax', 
+        queued_out = layers.Dense(2, activation='linear', 
                                   name='queued_out')(non_spatial_state)
-        control_group_act_out = layers.Dense(5, activation='softmax', 
+        control_group_act_out = layers.Dense(5, activation='linear', 
                                              name='contol_group_act_out')(non_spatial_state)
-        control_group_id_out = layers.Dense(10, activation='softmax', 
+        control_group_id_out = layers.Dense(10, activation='linear', 
                                             name='contol_group_id_out')(non_spatial_state)
-        select_point_act_out = layers.Dense(4, activation='softmax', 
+        select_point_act_out = layers.Dense(4, activation='linear', 
                                             name='select_point_act_out')(non_spatial_state)
-        select_add_out = layers.Dense(2, activation='softmax', 
+        select_add_out = layers.Dense(2, activation='linear', 
                                       name='select_add_out')(non_spatial_state)
-        select_unit_act_out = layers.Dense(4, activation='softmax', 
+        select_unit_act_out = layers.Dense(4, activation='linear', 
                                            name='select_unit_act_out')(non_spatial_state)
-        select_unit_id_out = layers.Dense(500, activation='softmax', 
+        select_unit_id_out = layers.Dense(500, activation='linear', 
                                           name='select_unit_id_out')(non_spatial_state)
-        select_worker_out = layers.Dense(4, activation='softmax', 
+        select_worker_out = layers.Dense(4, activation='linear', 
                                          name='select_worker_out')(non_spatial_state)
-        build_queue_id_out = layers.Dense(10, activation='softmax', 
+        build_queue_id_out = layers.Dense(10, activation='linear', 
                                           name='build_queue_id_out')(non_spatial_state)
-        unload_id_out = layers.Dense(500, activation='softmax', 
+        unload_id_out = layers.Dense(500, activation='linear', 
                                      name='unload_id_out')(non_spatial_state)
 
-        return Model(inputs=[non_spatial_input, screen_input, minimap_input],
-                     outputs=[action_id_out, screen_out, screen2_out,
-                              minimap_out, queued_out, control_group_act_out,
+        model = Model(inputs=[non_spatial_input, screen_input, minimap_input],
+                      outputs=[action_id_out, screen_out, minimap_out,
+                              screen2_out, queued_out, control_group_act_out,
                               control_group_id_out, select_point_act_out,
                               select_add_out, select_unit_act_out,
                               select_unit_id_out, select_worker_out,
                               build_queue_id_out, unload_id_out])
+        model.compile(optimizer='adam',
+                      loss='mse',
+                      metrics=['mae'])
+        return model
 

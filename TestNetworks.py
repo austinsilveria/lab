@@ -12,8 +12,8 @@ def test_SC2FullConv():
     print('Sample screen data:', screen1.shape)
     print('Sample minimap data:', minimap1.shape)
     model = nt.Networks().SC2FullConv()
-    model.compile(optimizer='adam',
-                  loss='categorical_crossentropy')
+    #model.compile(optimizer='adam',
+    #              loss='categorical_crossentropy')
     output = model.predict([non_spatial1, screen1, minimap1])
     model.summary()
     plot_model(model, show_shapes=True, to_file='model.png')
