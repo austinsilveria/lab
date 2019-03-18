@@ -22,7 +22,6 @@ def get_arg_ids(function_ids):
     return np.concatenate(args_ids, axis=0).astype(int)
 
 
-
 def test_get_arg_names():
     no_op = 0
     move_screen = 1
